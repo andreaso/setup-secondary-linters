@@ -1,0 +1,55 @@
+---
+
+name: Integration test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: Self-test
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      matrix:
+        runner:
+          - ubuntu-22.04
+          - ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Record workspace state (before)
+        id: before
+        run: echo "state=$(find . | sort | sha256sum | cut -d " " -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Run self
+        uses: ./
+
+      - name: Record workspace state (after)
+        id: after
+        run: echo "state=$(find . | sort | sha256sum | cut -d " " -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Fail on workspace state change
+        if: steps.before.outputs.state != steps.after.outputs.state
+        run: exit 1
+
+      - name: Smoketest installed linters
+        run: |
+          actionlint -version
+          hadolint --version
+          markdownlint --version
+
+      - name: Workflow self-test
+        shell: bash
+        run: actionlint
+
+      - name: README self-test
+        shell: bash
+        run: markdownlint README.md

@@ -1,0 +1,77 @@
+---
+
+name: Andreas' setup secondary linters
+description: Installs a set of secondary linters
+author: Andreas Olsson
+
+runs:
+  using: composite
+  steps:
+    - name: Check OS and ARCH
+      if: (runner.os != 'Linux') || (runner.arch != 'ARM64' && runner.arch != 'X64')
+      shell: bash
+      run: |
+        echo "::error title=Unsupported runner::This action is only written with x64 alt. arm64 Linux runners in mind"
+        exit 1
+
+    - name: Setup temporary directories
+      id: bootstrap
+      shell: bash
+      run: |
+        echo "workdir=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-workdir-XXXXXXX)" >> "$GITHUB_OUTPUT"
+        echo "installd=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-installs-XXXXXXX)" >> "$GITHUB_OUTPUT"
+
+    - name: Download and install actionlint
+      shell: bash
+      run: |
+        curl --fail --remote-name --silent --show-error \
+          https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash
+        bash download-actionlint.bash
+        install --mode=0755 actionlint "$installd"
+      working-directory: ${{ steps.bootstrap.outputs.workdir }}
+      env:
+        installd: ${{ steps.bootstrap.outputs.installd }}
+
+    - name: Find latest hadolint version
+      id: hadolint_lookup
+      shell: bash
+      run: echo "version=$(gh release list --repo hadolint/hadolint --json name,isLatest --jq '.[] | select(.isLatest)|.name')" >> "$GITHUB_OUTPUT"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Download and install hadolint
+      shell: bash
+      run: |
+        hadolint_url="https://github.com/hadolint/hadolint/releases/download/${hadolint_version}/${hadolint_filename}"
+        curl --location \
+          --fail --silent --show-error \
+          --output "hadolint" \
+          "$hadolint_url"
+        install --mode=0755 hadolint "$installd"
+      working-directory: ${{ steps.bootstrap.outputs.workdir }}
+      env:
+        hadolint_filename: ${{ runner.arch == 'ARM64' && 'hadolint-Linux-arm64' || 'hadolint-Linux-x86_64' }}
+        hadolint_version: ${{ steps.hadolint_lookup.outputs.version }}
+        installd: ${{ steps.bootstrap.outputs.installd }}
+
+    - name: Download and install markdownlint
+      shell: bash
+      run: |
+        markdownlintd=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-markdownlint-XXXXXXX)
+        cd "$markdownlintd"
+        npm install markdownlint-cli
+        ln -s "${markdownlintd}/node_modules/.bin/markdownlint" "$installd"
+      env:
+        installd: ${{ steps.bootstrap.outputs.installd }}
+
+    - name: Remove temporary working directory
+      shell: bash
+      run: rm -rf "$workd"
+      env:
+        workd: ${{ steps.bootstrap.outputs.workdir }}
+
+    - name: Update PATH
+      shell: bash
+      run: echo "$installd" >> "$GITHUB_PATH"
+      env:
+        installd: ${{ steps.bootstrap.outputs.installd }}
