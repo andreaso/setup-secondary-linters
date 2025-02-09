@@ -82,6 +82,6 @@ runs:
 
     - name: Update PATH
       shell: bash
-      run: echo "$installd" >> "$GITHUB_PATH"
+      run: echo "$installd" >> "$GITHUB_PATH"  # zizmor: ignore[github-env]
       env:
         installd: ${{ steps.bootstrap.outputs.installd }}
