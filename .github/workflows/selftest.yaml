@@ -47,10 +47,16 @@ jobs:
           actionlint -version
           hadolint --version
           markdownlint --version
+          zizmor --version
 
       - name: Workflow self-test
         shell: bash
         run: actionlint
+
+      - name: zizmor self-test
+        run: zizmor .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: README self-test
         shell: bash

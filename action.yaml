@@ -64,6 +64,16 @@ runs:
       env:
         installd: ${{ steps.bootstrap.outputs.installd }}
 
+    - name: Download and install zizmor
+      shell: bash
+      run: |
+        zizmord=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-zizmor-XXXXXXX)
+        python3 -m venv "$zizmord"
+        "${zizmord}/bin/pip3" install zizmor
+        ln -s "${zizmord}/bin/zizmor" "$installd"
+      env:
+        installd: ${{ steps.bootstrap.outputs.installd }}
+
     - name: Remove temporary working directory
       shell: bash
       run: rm -rf "$workd"
