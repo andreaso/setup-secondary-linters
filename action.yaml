@@ -21,17 +21,6 @@ runs:
         echo "workdir=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-workdir-XXXXXXX)" >> "$GITHUB_OUTPUT"
         echo "installd=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-installs-XXXXXXX)" >> "$GITHUB_OUTPUT"
 
-    - name: Download and install actionlint
-      shell: bash
-      run: |
-        curl --fail --remote-name --silent --show-error \
-          https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash
-        bash download-actionlint.bash
-        install --mode=0755 actionlint "$installd"
-      working-directory: ${{ steps.bootstrap.outputs.workdir }}
-      env:
-        installd: ${{ steps.bootstrap.outputs.installd }}
-
     - name: Find latest hadolint version
       id: hadolint_lookup
       shell: bash
