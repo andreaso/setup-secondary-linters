@@ -45,7 +45,7 @@ runs:
 
     - name: Download and install markdownlint
       shell: bash
-      run: |
+      run: |  # zizmor: ignore[adhoc-packages]
         markdownlintd=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-markdownlint-XXXXXXX)
         cd "$markdownlintd"
         npm install markdownlint-cli
