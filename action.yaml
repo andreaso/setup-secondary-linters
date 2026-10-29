@@ -21,26 +21,15 @@ runs:
         echo "workdir=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-workdir-XXXXXXX)" >> "$GITHUB_OUTPUT"
         echo "installd=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-installs-XXXXXXX)" >> "$GITHUB_OUTPUT"
 
-    - name: Find latest hadolint version
-      id: hadolint_lookup
-      shell: bash
-      run: echo "version=$(gh release list --repo hadolint/hadolint --json name,isLatest --jq '.[] | select(.isLatest)|.name')" >> "$GITHUB_OUTPUT"
-      env:
-        GH_TOKEN: ${{ github.token }}
-
     - name: Download and install hadolint
       shell: bash
       run: |
-        hadolint_url="https://github.com/hadolint/hadolint/releases/download/${hadolint_version}/${hadolint_filename}"
-        curl --location \
-          --fail --silent --show-error \
-          --output "hadolint" \
-          "$hadolint_url"
+        gh release download --repo=hadolint/hadolint --output=hadolint --pattern="$hadolint_filename"
         install --mode=0755 hadolint "$installd"
       working-directory: ${{ steps.bootstrap.outputs.workdir }}
       env:
-        hadolint_filename: ${{ runner.arch == 'ARM64' && 'hadolint-Linux-arm64' || 'hadolint-Linux-x86_64' }}
-        hadolint_version: ${{ steps.hadolint_lookup.outputs.version }}
+        GH_TOKEN: ${{ github.token }}
+        hadolint_filename: ${{ runner.arch == 'ARM64' && 'hadolint-linux-arm64' || 'hadolint-linux-x86_64' }}
         installd: ${{ steps.bootstrap.outputs.installd }}
 
     - name: Download and install markdownlint
@@ -56,11 +45,15 @@ runs:
     - name: Download and install zizmor
       shell: bash
       run: |
-        zizmord=$(mktemp --directory --tmpdir="${RUNNER_TEMP}" assl-zizmor-XXXXXXX)
-        python3 -m venv "$zizmord"
-        "${zizmord}/bin/pip3" install zizmor
-        ln -s "${zizmord}/bin/zizmor" "$installd"
+        version=$(gh release list --repo=zizmorcore/zizmor --json name,isLatest --jq '.[] | select(.isLatest)|.name')
+        gh release download "$version" --repo=zizmorcore/zizmor --pattern="$zizmor_tarball"
+        gh attestation verify "$zizmor_tarball" --repo=zizmorcore/zizmor --signer-workflow="zizmorcore/zizmor/.github/workflows/release-binaries.yml@refs/tags/${version}"
+        tar xf "$zizmor_tarball"
+        install --mode=0755 zizmor "$installd"
+      working-directory: ${{ steps.bootstrap.outputs.workdir }}
       env:
+        GH_TOKEN: ${{ github.token }}
+        zizmor_tarball: ${{ runner.arch == 'ARM64' && 'zizmor-aarch64-unknown-linux-gnu.tar.gz' || 'zizmor-x86_64-unknown-linux-gnu.tar.gz' }}
         installd: ${{ steps.bootstrap.outputs.installd }}
 
     - name: Remove temporary working directory
