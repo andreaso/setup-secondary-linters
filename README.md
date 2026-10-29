@@ -2,10 +2,9 @@
 
 Installs a set of secondary linters.
 
-* [actionlint](https://github.com/rhysd/actionlint)
 * [hadolint](https://github.com/hadolint/hadolint)
 * [markdownlint](https://github.com/igorshubovych/markdownlint-cli)
-* [zizmor](https://github.com/woodruffw/zizmor)
+* [zizmor](https://github.com/zizmorcore/zizmor)
 
 ## Usage
 
@@ -13,10 +12,7 @@ Installs a set of secondary linters.
 steps:
   # ...
   - name: Setup Secondary Linters
-    uses: andreaso/setup-secondary-linters@main
-
-  - name: Lint all GitHub Actions workflows
-    run: actionlint
+    uses: andreaso/setup-secondary-linters@62a905725ef427318105bead9c74f9ec4e5a779a # v0.2
 
   - name: Analyze all GitHub Actions workflows
     run: zizmor .

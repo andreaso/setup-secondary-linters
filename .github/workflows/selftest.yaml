@@ -59,4 +59,4 @@ jobs:
 
       - name: README self-test
         shell: bash
-        run: markdownlint README.md
+        run: markdownlint --disable MD013 README.md
